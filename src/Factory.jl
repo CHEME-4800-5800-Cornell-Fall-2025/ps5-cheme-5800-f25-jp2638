@@ -94,49 +94,52 @@ function build(modeltype::Type{MyRectangularGridWorldModel}, data::NamedTuple)::
     rewards = data[:rewards]
     defaultreward = haskey(data, :defaultreward) == false ? -1.0 : data[:defaultreward]
 
-    # setup storage
-    rewards_dict = Dict{Int,Float64}()
-    coordinates = Dict{Int,Tuple{Int,Int}}()
-    states = Dict{Tuple{Int,Int},Int}()
-    moves = Dict{Int,Tuple{Int,Int}}()
+    # Initialize storage dictionaries for the grid world
+    rewards_dict = Dict{Int,Float64}() # Maps state number to reward value
+    coordinates = Dict{Int,Tuple{Int,Int}}() # Maps state number to (x,y) coordinates
+    states = Dict{Tuple{Int,Int},Int}() # Maps (x,y) coordinates to state number
+    moves = Dict{Int,Tuple{Int,Int}}() # Maps action number to movement vector
+    
+    # Initialize state counter for numbering grid cells
+    state_counter = 1
 
-    # build all the stuff 
-    position_index = 1;
-    for i ∈ 1:nrows
-        for j ∈ 1:ncols
+    # Populate the dictionaries with state mappings
+    for i in 1:nrows
+        for j in 1:ncols
+            # map coordinates to state number and vice versa
+            coordinates[state_counter] = (i,j)
+            states[(i,j)] = state_counter
             
-            # capture this corrdinate 
-            coordinate = (i,j);
-
-            # set -
-            coordinates[position_index] = coordinate;
-            states[coordinate] = position_index;
-
-            if (haskey(rewards,coordinate) == true)
-                rewards_dict[position_index] = rewards[coordinate];
+            # setup rewards
+            coord_key = (i,j)
+            if haskey(rewards, coord_key)
+                rewards_dict[state_counter] = rewards[coord_key]
             else
-                rewards_dict[position_index] = defaultreward;
+                rewards_dict[state_counter] = defaultreward
             end
-
-            # update position_index -
-            position_index += 1;
+            
+            state_counter += 1
         end
     end
 
-    # setup the moves dictionary -
-    moves[1] = (-1,0)   # a = 1 up
-    moves[2] = (1,0)    # a = 2 down
-    moves[3] = (0,-1)   # a = 3 left
-    moves[4] = (0,1)    # a = 4 right
+        # Define possible movement vectors for each action
+    # Action 1: Move up (decrease row)
+    # Action 2: Move right (increase column)
+    # Action 3: Move down (increase row)
+    # Action 4: Move left (decrease column)
+    moves[1] = (-1,0)  # up: decrease row
+    moves[2] = (0,1)   # right: increase column
+    moves[3] = (1,0)   # down: increase row
+    moves[4] = (0,-1)  # left: decrease column
 
-    # add items to the model -
-    model.rewards = rewards_dict
-    model.coordinates = coordinates
-    model.states = states;
-    model.moves = moves;
+    # Populate model with computed data
     model.number_of_rows = nrows
     model.number_of_cols = ncols
+    model.coordinates = coordinates
+    model.states = states
+    model.moves = moves
+    model.rewards = rewards_dict
 
-    # return -
+    # return the model
     return model
 end

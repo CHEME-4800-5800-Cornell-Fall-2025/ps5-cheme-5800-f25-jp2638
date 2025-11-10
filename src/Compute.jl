@@ -98,6 +98,29 @@ function mysolve(model::MyValueIterationModel, problem::MyMDPProblemModel; ϵ::F
     number_of_actions = length(problem.𝒜);
     converged = false;
     counter = 1; # initialize iteration counter
+    
+    # Initialize value function
+    U = zeros(number_of_states)
+    U_old = copy(U)
+    
+    # main loop -
+    while (!converged && counter ≤ k_max)
+        # Update value function
+        U = [_backup(problem, U, s) for s ∈ problem.𝒮]
+        
+        # Check convergence
+        Δ = maximum(abs.(U - U_old))
+        if Δ < ϵ
+            converged = true
+        end
+        
+        # Update for next iteration
+        U_old = copy(U)
+        counter += 1
+    end
+    
+    # Return solution
+    return MyValueIterationSolution(problem, U);
     U = zeros(Float64, number_of_states); # initialize space, initially all the U(s) values are 0
 
     # initialize some temporary storage, that is used in the main loop -
